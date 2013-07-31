@@ -82,7 +82,7 @@ copyFile' old new = need [old] >> liftIO (copyFile old new)
 
 -- | Read a file, after calling 'need'.
 readFile' :: FilePath -> Action String
-readFile' x = need [x] >> liftIO (readFile x)
+readFile' x = need [x] >> liftIO (readFileStrict x)
 
 -- | Write a file, lifted to the 'Action' monad.
 writeFile' :: FilePath -> String -> Action ()
@@ -109,3 +109,13 @@ writeFileChanged name x = liftIO $ do
             src <- hGetContents h
             return $! src /= x
         when b $ writeFile name x
+
+
+-- Strict System.IO (from the `strict` package)
+
+hGetContentsStrict :: Handle -> IO String
+hGetContentsStrict h = hGetContents h >>= \s -> length s `seq` return s
+
+readFileStrict :: FilePath -> IO String
+readFileStrict name =  openFile name ReadMode >>= hGetContentsStrict
+{-# INLINE readFileStrict #-}
